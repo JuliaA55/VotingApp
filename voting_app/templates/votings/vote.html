@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Голосування на Blockchain</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/4.5.0/web3.min.js"></script>
+</head>
+<body>
+    {% extends 'base.html' %}
+    {% block content %}
+    <div style="width: 98%; margin-left: 1%; margin-top: 1%;">
+    <h2 style="margin-left: 30%;">Голосування: вибір найкращої книги</h2>
+
+    <h3 style="margin-left: 20%;">Підключення MetaMask</h3>
+    <button id="connectWallet" style="border: none; background-color: #BAFF39; border-radius: 8px; height: 40px; width: 250px; font-weight: bolder; margin-left: 20%;">Підключити MetaMask</button>
+    <h5 id="walletAddress" style="margin-left: 20%;">Адреса: <span>-</span></h5>
+
+    <h3 style="margin-left: 20%;">Додати книгу</h3>
+    <form id="addCandidateForm" style="margin-left: 20%;">
+        {% csrf_token %}
+        <input type="text" id="candidateName" name="name" placeholder="Назва книги" style="width: 400px;" required>
+        <button type="submit" style="border: none; background-color: #BAFF39; border-radius: 8px; height: 40px; width: 250px; font-weight: bolder; margin-left: 2%;">Додати</button>
+    </form>
+
+    <h3 style="margin-left: 20%;">Проголосувати</h3>
+    <form id="voteForm" style="margin-left: 20%;">
+        <input type="text" id="voteName" placeholder="Назва книги" style="width: 400px;" required>
+        <button type="submit" style="border: none; background-color: #BAFF39; border-radius: 8px; height: 40px; width: 250px; font-weight: bolder; margin-left: 2%;">Голосувати</button>
+    </form>
+
+    <!--<h2>Результати</h2>
+    <button onclick="getWinner()">Переможець</button>
+    <p id="winner"></p>-->
+
+    <h3 style="margin-left: 20%;">Баланс контракту</h3>
+    <button onclick="getBalance()" style="border: none; background-color: #BAFF39; border-radius: 8px; height: 40px; width: 250px; font-weight: bolder; margin-left: 20%;">Дізнатися баланс</button>
+    <h5 id="balance" style="margin-left: 20%;"></h5>
+   </div>
+    <script>
+        let userAccount = null;
+
+        // 🔹 Підключення MetaMask
+        document.getElementById("connectWallet").addEventListener("click", async function() {
+            if (window.ethereum) {
+                try {
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                    userAccount = accounts[0];
+                    document.getElementById("walletAddress").innerHTML = `Адреса: <span>${userAccount}</span>`;
+                } catch (error) {
+                    console.error("Помилка підключення MetaMask:", error);
+                }
+            } else {
+                alert("Установіть MetaMask!");
+            }
+        });
+
+        // 🔹 Додавання кандидата (відправка Ethereum-адреси)
+        document.getElementById("addCandidateForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            if (!userAccount) return alert("Спочатку підключіть MetaMask!");
+
+            const formData = new FormData();
+            formData.append("name", document.getElementById("candidateName").value);
+            formData.append("sender", userAccount);  // Передаємо Ethereum-адресу
+            
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch("/add_candidate/", {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message));
+        });
+
+        // 🔹 Голосування за кандидата
+        document.getElementById("voteForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            if (!userAccount) return alert("Спочатку підключіть MetaMask!");
+
+            const formData = new FormData();
+            formData.append("name", document.getElementById("voteName").value);
+            formData.append("sender", userAccount);  // Передаємо Ethereum-адресу
+            
+            fetch("/vote/", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message));
+        });
+
+        // 🔹 Отримання переможця
+        function getWinner() {
+            fetch("/get_winner/")
+            .then(response => response.json())
+            .then(data => document.getElementById("winner").innerText = "Переможець: " + data.winner);
+        }
+
+        // 🔹 Отримання балансу контракту
+        function getBalance() {
+            fetch("/get_balance/")
+            .then(response => response.json())
+            .then(data => document.getElementById("balance").innerText = "Баланс: " + data.balance + " ETH");
+        }
+
+    </script>
+    {% endblock %}
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список Книг</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body  style="background-color:#f8f9fa;">
+    {% extends 'base.html' %}
+    {% block content %}
+
+    <div class="containerDiv" style="width: 98%; margin-left: 1%; margin-top: 1%;">
+
+        <form method="get" action="{% url 'book_list' %}" class="d-flex mb-4">
+            <input type="text" name="search" class="form-control me-2" style="width: 900px; margin-left: 30%;" placeholder="Пошук книги за назвою" value="{{ request.GET.search|default:'' }}">
+            <button type="submit" class="btn btn-dark">Пошук</button>
+        </form>
+        
+        <!-- Список категорій -->
+        <div class="categoryDiv" style="width: 15%; border-radius: 10px; background-color:#ffffff; border: 1px solid #cccccc;">
+            <h2>Категорії книг</h2>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li>
+                    <a class="nav-link link-dark {% if not request.GET.category_id %}active{% endif %}" href="{% url 'book_list' %}">Всі</a>
+                </li>
+                {% for category in categories %}
+                <li>
+                    <a class="nav-link link-dark {% if request.GET.category_id|default:'' == category.id|stringformat:'s' %}active{% endif %}" href="{% url 'book_list' %}?category_id={{ category.id }}">
+                        {{ category.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Список книг -->
+        <div class="cardsDiv" style="background-color: rgb(241, 239, 239); border-radius: 10px; width: 84%; margin-top: -24%; margin-left: auto;">
+            <div class="cardDivList" style="display: flex; flex-wrap: wrap; gap: 13px; margin-left: 1%;">
+               {% for book in books %}
+                    <div class="card cardDivList1" style="width: 19%;">
+                        {% if book.photo %}
+                            <img src="{{book.photo.url}}" class="card-img-top cardImg" alt="..." style="width:100%; height: 350px; border-radius:7px;">
+                        {% else %}
+                            <img src="https://m.media-amazon.com/images/I/719uMEB4kiL._AC_UF1000,1000_QL80_.jpg" class="card-img-top" alt="...">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-text">
+                                <a href="{% url 'book_detail' book.id %}" style="text-decoration: none; color: black;">
+                                    {{book.title}}
+                                </a>
+                            </h5>
+                            <p class="card-text" style="color: #6c757d;">{{book.author}}</p>
+                            <p class="card-text" style="color: #6c757d;">{{book.genre}}</p>
+                        </div>
+                    </div>           
+               {% empty %}
+                    <h3>Книги відсутні</h3>       
+               {% endfor %}
+            </div>
+        </div>
+
+
+        <div class="d-flex justify-content-center mt-4" style="margin-bottom: 20px;">
+            <nav>
+                <ul class="pagination" >
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark" style="color: white; font-weight: bolder;" href="?page=1{% if request.GET.category_id %}&category_id={{ request.GET.category_id }}{% endif %}" aria-label="Перша">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link bg-dark" style="color: white; font-weight: bolder;" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category_id %}&category_id={{ request.GET.category_id }}{% endif %}" aria-label="Попередня">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link bg-dark" style="color: white; font-weight: bolder;">Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark" style="color: white; font-weight: bolder;" href="?page={{ page_obj.next_page_number }}{% if request.GET.category_id %}&category_id={{ request.GET.category_id }}{% endif %}" aria-label="Наступна">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link bg-dark" style="color: white; font-weight: bolder;" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.category_id %}&category_id={{ request.GET.category_id }}{% endif %}" aria-label="Остання">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>
